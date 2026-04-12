@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BEAT RUNNER | AUTOMATION FLIGHT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BEAT RUNNER | MOBILE FLIGHT</title>
     <style>
         :root {
             --fl-orange: #ff8c00;
@@ -13,16 +13,80 @@
             --vst-gold: #ffd700;
         }
 
-        body { margin: 0; overflow: hidden; background: #121314; font-family: 'Segoe UI', Tahoma, sans-serif; color: white; }
-        #game-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        canvas { background: var(--fl-bg); border: 8px solid var(--fl-panel); border-top: 25px solid var(--fl-panel); display: none; box-shadow: 0 30px 60px rgba(0,0,0,0.7); border-radius: 4px; }
-        #ui { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); font-size: 14px; display: none; background: #111; padding: 5px 20px; border-radius: 20px; border: 1px solid var(--fl-orange); color: var(--fl-orange); font-weight: bold; text-align: center; z-index: 20; }
-        #menu, #end-screen { text-align: center; z-index: 10; background: var(--fl-panel); padding: 50px; border-radius: 12px; border: 1px solid #444; min-width: 400px; }
-        h1 { color: var(--fl-orange); text-transform: uppercase; letter-spacing: 5px; font-style: italic; }
-        .stat-box { background: #111; padding: 20px; border-radius: 8px; margin: 15px 0; border-top: 2px solid var(--fl-orange); }
-        button { padding: 12px 35px; background: #3b3f43; color: white; border: 1px solid #555; border-radius: 3px; font-weight: bold; cursor: pointer; margin: 10px; text-transform: uppercase; }
-        button:hover { background: var(--fl-orange); color: #000; }
-        input { padding: 12px; background: #000; border: 1px solid #333; color: var(--fl-orange); text-align: center; margin-bottom: 15px; width: 200px; font-family: monospace; }
+        /* Prevent mobile scrolling/bouncing */
+        * { touch-action: manipulation; }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #121314; 
+            font-family: 'Segoe UI', sans-serif; 
+            color: white; 
+            position: fixed; 
+            width: 100%; 
+            height: 100%;
+        }
+
+        #game-container { 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+        }
+
+        canvas { 
+            background: var(--fl-bg); 
+            display: none; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        #ui { 
+            position: absolute; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            font-size: 12px; 
+            display: none; 
+            background: rgba(17, 17, 17, 0.9); 
+            padding: 8px 15px; 
+            border-radius: 15px; 
+            border: 1px solid var(--fl-orange); 
+            color: var(--fl-orange); 
+            text-align: center; 
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        #menu, #end-screen { 
+            text-align: center; 
+            z-index: 10; 
+            background: var(--fl-panel); 
+            padding: 30px; 
+            border-radius: 12px; 
+            border: 1px solid #444; 
+            width: 80%;
+            max-width: 400px;
+        }
+
+        h1 { color: var(--fl-orange); font-size: 24px; text-transform: uppercase; letter-spacing: 3px; }
+        .stat-box { background: #111; padding: 15px; border-radius: 8px; margin: 10px 0; border-top: 2px solid var(--fl-orange); }
+        
+        button { 
+            padding: 15px 30px; 
+            background: #3b3f43; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin: 10px; 
+            text-transform: uppercase; 
+            width: 100%;
+        }
+        
+        button:active { background: var(--fl-orange); color: #000; }
+        input { padding: 12px; background: #000; border: 1px solid #333; color: var(--fl-orange); text-align: center; margin-bottom: 10px; width: 90%; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -30,78 +94,68 @@
 <div id="game-container">
     <div id="menu">
         <h1>GAIN STAGE</h1>
-        <p>POWERED BY PRODUCERS v2.0 (FLIGHT)</p>
-        <button onclick="startGame()">RENDER PROJECT</button>
+        <p>POWERED BY PRODUCERS v2.1</p>
+        <button onclick="startGame()">TAP TO RENDER</button>
     </div>
 
     <div id="ui">
         MASTER OUTPUT: <span id="score">0</span> dB<br>
         <small style="color: var(--vst-gold);">PLUGINS LOADED: <span id="pluginCount">0/0</span></small>
     </div>
+    
     <canvas id="gameCanvas"></canvas>
 
     <div id="end-screen" style="display:none;">
         <h1 id="status-message">PROJECT CRASHED</h1>
         <div id="score-submission">
             <div class="stat-box">
-                <p id="final-stats" style="font-size: 20px; margin: 5px 0;">FINAL PEAK: <span id="finalScore">0</span></p>
-                <p style="font-size: 18px; color: var(--vst-gold); margin: 10px 0;">PLUGINS ACQUIRED: <span id="finalPlugins">0 / 0</span></p>
+                <p id="final-stats">PEAK: <span id="finalScore">0</span></p>
+                <p style="color: var(--vst-gold);">PLUGINS: <span id="finalPlugins">0 / 0</span></p>
             </div>
             <input type="text" id="playerName" placeholder="PRODUCER_NAME">
-            <br>
             <button onclick="saveScore()">EXPORT TO CLOUD</button>
-        </div>
-        <div id="leaderboard-section" style="margin-top: 20px; display:none;">
-            <h3>TOP PRODUCERS</h3>
-            <ul id="leaderboard-list" style="list-style: none; padding: 0; color: var(--fl-orange); font-family: monospace;"></ul>
-            <button onclick="backToMenu()">EXIT</button>
         </div>
         <button id="quick-play-btn" onclick="startGame()" style="background: var(--fl-orange); color: black;">RE-MIX</button>
     </div>
 </div>
 
-<audio id="bgm" src="track.mp3"></audio>
-
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const bgm = document.getElementById('bgm');
     
-    const OBSTACLE_SPEED = 5; 
-    const SPAWN_INTERVAL = 1800; // ms between gates
-    const GATE_GAP = 180; // Space between top and bottom faders
+    let OBSTACLE_SPEED = 4; 
+    let SPAWN_INTERVAL = 1500; 
+    let GATE_GAP = 160; 
 
     let score = 0, gameActive = false, obstacles = [], coins = [], floatingTexts = [];
     let pluginsSpawned = 0, pluginsCollected = 0;
     let lastSpawnTime = 0, animationId = null;
-    let waveOffset = 0, gameStartTime = 0;
+    let waveOffset = 0;
     
-    const FEEDBACK_WORDS = ["SIDECHAINED", "PROCESSED", "QUANTIZED", "LIMITING", "NORMALIZED", "SAMPLING"];
+    const FEEDBACK_WORDS = ["SIDECHAINED", "PROCESSED", "QUANTIZED", "LIMITING", "NORMALIZED"];
 
     const player = {
-        x: 150, y: 225, width: 35, height: 40,
-        dy: 0, gravity: 0.35, lift: -7
+        x: 60, y: 0, width: 30, height: 35,
+        dy: 0, gravity: 0.3, lift: -6
     };
 
-    function initCanvas() {
-        canvas.width = 850;
-        canvas.height = 500;
-        player.y = canvas.height / 2;
-        player.dy = 0;
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        // Adjust mechanics for mobile height
+        GATE_GAP = canvas.height * 0.3; 
+        player.x = canvas.width * 0.15;
     }
 
     function spawnGate() {
-        const minGateHeight = 50;
+        const minGateHeight = 60;
         const maxGateHeight = canvas.height - GATE_GAP - minGateHeight;
         const topHeight = Math.floor(Math.random() * (maxGateHeight - minGateHeight + 1)) + minGateHeight;
 
-        // Top Fader
-        obstacles.push({ x: canvas.width, y: 0, width: 40, height: topHeight, passed: false, type: 'top' });
-        // Bottom Fader
-        obstacles.push({ x: canvas.width, y: topHeight + GATE_GAP, width: 40, height: canvas.height - (topHeight + GATE_GAP), passed: false, type: 'bottom' });
+        obstacles.push({ x: canvas.width, y: 0, width: 45, height: topHeight, passed: false, type: 'top' });
+        obstacles.push({ x: canvas.width, y: topHeight + GATE_GAP, width: 45, height: canvas.height - (topHeight + GATE_GAP), passed: false, type: 'bottom' });
 
-        // Plugin in the middle
-        coins.push({ x: canvas.width + 10, y: topHeight + (GATE_GAP/2) - 8, size: 16, collected: false });
+        coins.push({ x: canvas.width + 15, y: topHeight + (GATE_GAP/2) - 8, size: 18, collected: false });
         pluginsSpawned++;
         updateUI();
     }
@@ -113,7 +167,6 @@
 
     function update() {
         if (!gameActive) return;
-        if (bgm.src !== "" && bgm.ended) { endGame("TRACK RENDERED"); return; }
 
         let now = Date.now();
         if (now - lastSpawnTime > SPAWN_INTERVAL) {
@@ -121,7 +174,6 @@
             lastSpawnTime = now;
         }
 
-        // Physics
         player.dy += player.gravity;
         player.y += player.dy;
         waveOffset += OBSTACLE_SPEED;
@@ -136,20 +188,16 @@
             let obs = obstacles[i];
             obs.x -= OBSTACLE_SPEED;
 
-            // Collision
-            if (player.x + 5 < obs.x + obs.width && player.x + player.width - 5 > obs.x &&
-                player.y + 5 < obs.y + obs.height && player.y + player.height - 5 > obs.y) {
+            if (player.x < obs.x + obs.width && player.x + player.width > obs.x &&
+                player.y < obs.y + obs.height && player.y + player.height > obs.y) {
                 endGame("PROJECT CRASHED");
             }
 
-            // Passing Score
             if (!obs.passed && obs.x < player.x && obs.type === 'top') {
                 obs.passed = true;
                 score += 100;
                 updateUI();
-                floatingTexts.push({ x: player.x, y: player.y - 20, text: FEEDBACK_WORDS[Math.floor(Math.random() * FEEDBACK_WORDS.length)], life: 1.0 });
             }
-
             if (obs.x + obs.width < -50) obstacles.splice(i, 1);
         }
 
@@ -157,25 +205,15 @@
         for (let i = coins.length - 1; i >= 0; i--) {
             let c = coins[i];
             c.x -= OBSTACLE_SPEED;
-
-            if (!c.collected && 
-                player.x < c.x + c.size && player.x + player.width > c.x &&
+            if (!c.collected && player.x < c.x + c.size && player.x + player.width > c.x &&
                 player.y < c.y + c.size && player.y + player.height > c.y) {
                 c.collected = true;
                 score += 1000;
                 pluginsCollected++;
                 updateUI();
-                floatingTexts.push({ x: player.x, y: player.y - 10, text: "PLUG-IN OPENED", life: 1.0 });
                 coins.splice(i, 1);
             }
             if (c.x < -50) coins.splice(i, 1);
-        }
-
-        // Text
-        for (let i = floatingTexts.length - 1; i >= 0; i--) {
-            floatingTexts[i].y -= 1;
-            floatingTexts[i].life -= 0.02;
-            if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
         }
 
         draw();
@@ -187,53 +225,42 @@
         
         // Grid
         ctx.strokeStyle = '#3d4144'; ctx.lineWidth = 1;
-        for(let i = -(waveOffset % 80); i < canvas.width; i += 80) {
+        for(let i = -(waveOffset % 60); i < canvas.width; i += 60) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
         }
 
         // VSTs
         coins.forEach(c => {
             ctx.fillStyle = "#ffd700";
-            ctx.shadowBlur = 15; ctx.shadowColor = "#ffd700";
             ctx.beginPath();
             ctx.moveTo(c.x + c.size/2, c.y);
             ctx.lineTo(c.x + c.size, c.y + c.size/2);
             ctx.lineTo(c.x + c.size/2, c.y + c.size);
             ctx.lineTo(c.x, c.y + c.size/2);
-            ctx.closePath();
             ctx.fill();
-            ctx.shadowBlur = 0;
         });
 
         // Player (The Orange)
         ctx.save();
-        ctx.translate(player.x + 17, player.y + 20);
-        ctx.rotate(player.dy * 0.05); // Tilt based on velocity
+        ctx.translate(player.x + 15, player.y + 17);
+        ctx.rotate(player.dy * 0.05);
         ctx.fillStyle = "#ff8c00"; ctx.beginPath();
-        ctx.ellipse(0, 0, 16, 19, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#4caf50"; ctx.beginPath();
-        ctx.ellipse(5, -15, 10, 5, -0.6, 0, Math.PI * 2); ctx.fill();
+        ctx.ellipse(0, 0, 15, 17, 0, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
 
-        // Faders (Top and Bottom)
+        // Faders
         obstacles.forEach(obs => {
             ctx.fillStyle = "#111"; 
-            ctx.fillRect(obs.x + 15, obs.y, 10, obs.height); // Channel Strip
-            ctx.fillStyle = "#ff4c4c"; // The Fader Knob
+            ctx.fillRect(obs.x + 18, obs.y, 8, obs.height);
+            ctx.fillStyle = "#ff4c4c";
             const knobY = (obs.type === 'top') ? obs.height - 20 : obs.y;
             ctx.fillRect(obs.x, knobY, obs.width, 20);
-        });
-
-        floatingTexts.forEach(ft => {
-            ctx.font = "bold 13px 'Segoe UI'";
-            ctx.fillStyle = ft.text === "PLUG-IN OPENED" ? "#ffd700" : "white";
-            ctx.fillText(ft.text, ft.x, ft.y);
         });
     }
 
     function startGame() {
-        if (animationId) cancelAnimationFrame(animationId);
-        score = 0; obstacles = []; coins = []; floatingTexts = []; 
+        resize();
+        score = 0; obstacles = []; coins = []; 
         pluginsSpawned = 0; pluginsCollected = 0;
         lastSpawnTime = Date.now(); waveOffset = 0;
         gameActive = true;
@@ -242,48 +269,29 @@
         document.getElementById('ui').style.display = 'block';
         canvas.style.display = 'block';
         updateUI();
-        initCanvas();
-        bgm.currentTime = 0;
-        bgm.play().catch(() => {});
         update(); 
     }
 
     function endGame(msg) {
-        gameActive = false; bgm.pause();
-        const statusHeading = document.getElementById('status-message');
-        statusHeading.innerText = msg;
-        statusHeading.style.color = msg === "TRACK RENDERED" ? "var(--fl-orange)" : "var(--clipping)";
+        gameActive = false;
+        document.getElementById('status-message').innerText = msg;
         document.getElementById('finalScore').innerText = score;
         document.getElementById('finalPlugins').innerText = `${pluginsCollected} / ${pluginsSpawned}`;
         document.getElementById('end-screen').style.display = 'block';
+        cancelAnimationFrame(animationId);
     }
 
-    function saveScore() {
-        const name = document.getElementById('playerName').value || "PRODUCER";
-        let board = JSON.parse(localStorage.getItem('beatRunnerScores')) || [];
-        board.push({ name: name, score: score });
-        board.sort((a,b) => b.score - a.score);
-        localStorage.setItem('beatRunnerScores', JSON.stringify(board.slice(0,5)));
-        const list = document.getElementById('leaderboard-list');
-        list.innerHTML = board.slice(0,5).map(e => `<li>${e.name.toUpperCase()} >> ${e.score} PEAK</li>`).join('');
-        document.getElementById('score-submission').style.display = 'none';
-        document.getElementById('leaderboard-section').style.display = 'block';
-    }
-
-    function backToMenu() { 
-        document.getElementById('end-screen').style.display = 'none'; 
-        canvas.style.display = 'none'; 
-        document.getElementById('menu').style.display = 'block'; 
-    }
-
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') {
-            if (gameActive) {
-                player.dy = player.lift;
-            }
-            e.preventDefault();
+    // Controls
+    const handleInput = (e) => {
+        if (gameActive) {
+            player.dy = player.lift;
         }
-    });
+        e.preventDefault();
+    };
+
+    window.addEventListener('keydown', (e) => { if(e.code === 'Space') handleInput(e); });
+    window.addEventListener('touchstart', handleInput, { passive: false });
+    window.addEventListener('resize', resize);
 </script>
 </body>
 </html>
