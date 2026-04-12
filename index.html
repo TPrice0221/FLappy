@@ -213,15 +213,27 @@
     }
 
     function startGame() {
+        // 1. Clear any existing game loops
         if (animationId) cancelAnimationFrame(animationId);
         
-        // Reset Game Stats
-        score = 0; obstacles = []; coins = []; floatingTexts = []; 
-        pluginsSpawned = 0; pluginsCollected = 0;
-        lastSpawnTime = Date.now(); waveOffset = 0;
+        // 2. Initialize Audio Hardware FIRST (The "Force Unlock")
+        // This ensures the browser registers the user click for the audio track
+        bgm.pause();
+        bgm.currentTime = 0;
+        bgm.load(); 
+
+        // 3. Reset Game Stats
+        score = 0; 
+        obstacles = []; 
+        coins = []; 
+        floatingTexts = []; 
+        pluginsSpawned = 0; 
+        pluginsCollected = 0;
+        lastSpawnTime = Date.now(); 
+        waveOffset = 0;
         gameActive = true;
 
-        // UI Management
+        // 4. Toggle UI
         document.getElementById('menu').style.display = 'none';
         document.getElementById('end-screen').style.display = 'none';
         document.getElementById('ui').style.display = 'block';
@@ -230,17 +242,15 @@
         updateUI();
         initCanvas();
 
-        // AUDIO TRIGGER FIX
-        bgm.currentTime = 0;
+        // 5. Play the Beat
         const playPromise = bgm.play();
-
         if (playPromise !== undefined) {
             playPromise.catch(error => {
-                console.log("Playback failed. Check if track.mp3 exists in the folder!");
-                // If it fails, we still let the game run so it doesn't freeze
+                console.error("Playback failed. Check if track.mp3 is in the same folder.", error);
             });
         }
 
+        // 6. Start the Game Engine
         update(); 
     }
     function endGame(msg) {
