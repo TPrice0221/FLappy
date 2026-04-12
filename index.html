@@ -214,21 +214,35 @@
 
     function startGame() {
         if (animationId) cancelAnimationFrame(animationId);
+        
+        // Reset Game Stats
         score = 0; obstacles = []; coins = []; floatingTexts = []; 
         pluginsSpawned = 0; pluginsCollected = 0;
         lastSpawnTime = Date.now(); waveOffset = 0;
         gameActive = true;
+
+        // UI Management
         document.getElementById('menu').style.display = 'none';
         document.getElementById('end-screen').style.display = 'none';
         document.getElementById('ui').style.display = 'block';
         canvas.style.display = 'block';
+        
         updateUI();
         initCanvas();
+
+        // AUDIO TRIGGER FIX
         bgm.currentTime = 0;
-        bgm.play().catch(() => {});
+        const playPromise = bgm.play();
+
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log("Playback failed. Check if track.mp3 exists in the folder!");
+                // If it fails, we still let the game run so it doesn't freeze
+            });
+        }
+
         update(); 
     }
-
     function endGame(msg) {
         gameActive = false; bgm.pause();
         const statusHeading = document.getElementById('status-message');
