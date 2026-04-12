@@ -74,7 +74,7 @@
     let score = 0, gameActive = false, obstacles = [], coins = [], floatingTexts = [];
     let pluginsSpawned = 0, pluginsCollected = 0;
     let lastSpawnTime = 0, animationId = null;
-    let waveOffset = 0, gameStartTime = 0;
+    let waveOffset = 0;
     
     const FEEDBACK_WORDS = ["SIDECHAINED", "PROCESSED", "QUANTIZED", "LIMITING", "NORMALIZED", "SAMPLING"];
 
@@ -110,6 +110,9 @@
 
     function update() {
         if (!gameActive) return;
+        
+        // Track ended check from your working code
+        if (bgm.src !== "" && bgm.ended) { endGame("TRACK RENDERED"); return; }
 
         let now = Date.now();
         if (now - lastSpawnTime > SPAWN_INTERVAL) {
@@ -128,16 +131,12 @@
         for (let i = obstacles.length - 1; i >= 0; i--) {
             let obs = obstacles[i];
             obs.x -= OBSTACLE_SPEED;
-
             if (player.x + 4 < obs.x + obs.width && player.x + player.width - 4 > obs.x &&
                 player.y + 4 < obs.y + obs.height && player.y + player.height - 4 > obs.y) {
                 endGame("PROJECT CRASHED");
             }
-
             if (!obs.passed && obs.x < player.x && obs.type === 'top') {
-                obs.passed = true;
-                score += 100;
-                updateUI();
+                obs.passed = true; score += 100; updateUI();
                 floatingTexts.push({ x: player.x, y: player.y - 20, text: FEEDBACK_WORDS[Math.floor(Math.random() * FEEDBACK_WORDS.length)], life: 1.0 });
             }
             if (obs.x + obs.width < -50) obstacles.splice(i, 1);
@@ -146,14 +145,9 @@
         for (let i = coins.length - 1; i >= 0; i--) {
             let c = coins[i];
             c.x -= OBSTACLE_SPEED;
-
-            if (!c.collected && 
-                player.x < c.x + c.size && player.x + player.width > c.x &&
+            if (!c.collected && player.x < c.x + c.size && player.x + player.width > c.x &&
                 player.y < c.y + c.size && player.y + player.height > c.y) {
-                c.collected = true;
-                score += 1000;
-                pluginsCollected++;
-                updateUI();
+                c.collected = true; score += 1000; pluginsCollected++; updateUI();
                 floatingTexts.push({ x: player.x, y: player.y - 10, text: "PLUG-IN OPENED", life: 1.0 });
                 coins.splice(i, 1);
             }
@@ -161,8 +155,7 @@
         }
 
         for (let i = floatingTexts.length - 1; i >= 0; i--) {
-            floatingTexts[i].y -= 1;
-            floatingTexts[i].life -= 0.02;
+            floatingTexts[i].y -= 1; floatingTexts[i].life -= 0.02;
             if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
         }
 
@@ -172,68 +165,39 @@
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
         ctx.strokeStyle = '#3d4144'; ctx.lineWidth = 1;
         for(let i = -(waveOffset % 80); i < canvas.width; i += 80) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
         }
-
         coins.forEach(c => {
-            ctx.fillStyle = "#ffd700";
-            ctx.beginPath();
-            ctx.moveTo(c.x + c.size/2, c.y);
-            ctx.lineTo(c.x + c.size, c.y + c.size/2);
-            ctx.lineTo(c.x + c.size/2, c.y + c.size);
-            ctx.lineTo(c.x, c.y + c.size/2);
-            ctx.fill();
+            ctx.fillStyle = "#ffd700"; ctx.beginPath();
+            ctx.moveTo(c.x + c.size/2, c.y); ctx.lineTo(c.x + c.size, c.y + c.size/2);
+            ctx.lineTo(c.x + c.size/2, c.y + c.size); ctx.lineTo(c.x, c.y + c.size/2); ctx.fill();
         });
-
         ctx.save();
-        ctx.translate(player.x + 16, player.y + 18);
-        ctx.rotate(player.dy * 0.05);
-        ctx.fillStyle = "#ff8c00"; ctx.beginPath();
-        ctx.ellipse(0, 0, 16, 18, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#4caf50"; ctx.beginPath();
-        ctx.ellipse(5, -14, 9, 4, -0.6, 0, Math.PI * 2); ctx.fill();
+        ctx.translate(player.x + 16, player.y + 18); ctx.rotate(player.dy * 0.05);
+        ctx.fillStyle = "#ff8c00"; ctx.beginPath(); ctx.ellipse(0, 0, 16, 18, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#4caf50"; ctx.beginPath(); ctx.ellipse(5, -14, 9, 4, -0.6, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
-
         obstacles.forEach(obs => {
-            ctx.fillStyle = "#111"; 
-            ctx.fillRect(obs.x + 15, obs.y, 10, obs.height);
+            ctx.fillStyle = "#111"; ctx.fillRect(obs.x + 15, obs.y, 10, obs.height);
             ctx.fillStyle = "#ff4c4c"; 
             const knobY = (obs.type === 'top') ? obs.height - 20 : obs.y;
             ctx.fillRect(obs.x, knobY, obs.width, 20);
         });
-
         floatingTexts.forEach(ft => {
-            ctx.font = "bold 13px 'Segoe UI'";
-            ctx.fillStyle = ft.text === "PLUG-IN OPENED" ? "#ffd700" : "white";
+            ctx.font = "bold 13px 'Segoe UI'"; ctx.fillStyle = ft.text === "PLUG-IN OPENED" ? "#ffd700" : "white";
             ctx.fillText(ft.text, ft.x, ft.y);
         });
     }
 
     function startGame() {
-        // 1. Clear any existing game loops
         if (animationId) cancelAnimationFrame(animationId);
-        
-        // 2. Initialize Audio Hardware FIRST (The "Force Unlock")
-        // This ensures the browser registers the user click for the audio track
-        bgm.pause();
-        bgm.currentTime = 0;
-        bgm.load(); 
-
-        // 3. Reset Game Stats
-        score = 0; 
-        obstacles = []; 
-        coins = []; 
-        floatingTexts = []; 
-        pluginsSpawned = 0; 
-        pluginsCollected = 0;
-        lastSpawnTime = Date.now(); 
-        waveOffset = 0;
+        score = 0; obstacles = []; coins = []; floatingTexts = []; 
+        pluginsSpawned = 0; pluginsCollected = 0;
+        lastSpawnTime = Date.now(); waveOffset = 0;
         gameActive = true;
 
-        // 4. Toggle UI
         document.getElementById('menu').style.display = 'none';
         document.getElementById('end-screen').style.display = 'none';
         document.getElementById('ui').style.display = 'block';
@@ -242,17 +206,13 @@
         updateUI();
         initCanvas();
 
-        // 5. Play the Beat
-        const playPromise = bgm.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.error("Playback failed. Check if track.mp3 is in the same folder.", error);
-            });
-        }
+        // EXACT AUDIO LOGIC FROM WORKING VERSION
+        bgm.currentTime = 0;
+        bgm.play().catch(() => console.log("Manual Start Required"));
 
-        // 6. Start the Game Engine
         update(); 
     }
+
     function endGame(msg) {
         gameActive = false; bgm.pause();
         const statusHeading = document.getElementById('status-message');
@@ -275,11 +235,7 @@
         document.getElementById('leaderboard-section').style.display = 'block';
     }
 
-    function backToMenu() { 
-        document.getElementById('end-screen').style.display = 'none'; 
-        canvas.style.display = 'none'; 
-        document.getElementById('menu').style.display = 'block'; 
-    }
+    function backToMenu() { document.getElementById('end-screen').style.display = 'none'; canvas.style.display = 'none'; document.getElementById('menu').style.display = 'block'; }
 
     window.addEventListener('keydown', (e) => {
         if (e.code === 'Space') {
