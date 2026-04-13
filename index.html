@@ -53,7 +53,7 @@
     </div>
 
     <div id="ui">
-        MASTER OUTPUT: <span id="score">0</span> dB<br>
+        MASTER OUTPUT: <span id="score">0</span> LUFS<br>
         <small style="color: var(--vst-gold);">PLUGINS LOADED: <span id="pluginCount">0/0</span></small>
     </div>
     <canvas id="gameCanvas"></canvas>
@@ -142,11 +142,10 @@
     }
 
     function addFloatingText(x, y, text, isGold = false) {
-        // Prevent Overlapping: Check if any text is already near this Y position
         let targetY = y;
         floatingTexts.forEach(ft => {
             if (Math.abs(ft.y - targetY) < 25) {
-                targetY -= 30; // Push new text higher if occupied
+                targetY -= 30; 
             }
         });
 
@@ -156,7 +155,7 @@
             text: text,
             life: 1.0,
             isGold: isGold,
-            scale: 0.5, // Start small for pop effect
+            scale: 0.5, 
             velocity: -1.2
         });
     }
@@ -247,7 +246,7 @@
             let ft = floatingTexts[i];
             ft.y += ft.velocity;
             ft.life -= 0.015;
-            if (ft.scale < 1.1) ft.scale += 0.1; // Pop animation
+            if (ft.scale < 1.1) ft.scale += 0.1; 
             if (ft.life <= 0) floatingTexts.splice(i, 1);
         }
 
@@ -292,7 +291,6 @@
             ctx.fillRect(obs.x, kY, obs.w, 22);
         });
 
-        // Character (The Orange)
         ctx.save();
         ctx.translate(player.x + 16, player.y + 18); ctx.rotate(player.dy * 0.05);
         ctx.fillStyle = "#ff8c00"; ctx.beginPath(); ctx.ellipse(0, 0, 16, 18, 0, 0, Math.PI * 2); ctx.fill();
@@ -312,27 +310,20 @@
             ctx.textAlign = "left"; 
         }
 
-        // DRAW FLOATING TEXT
         floatingTexts.forEach(ft => {
             ctx.save();
             ctx.globalAlpha = ft.life;
             ctx.translate(ft.x, ft.y);
             ctx.scale(ft.scale, ft.scale);
-            
-            // Text shadow/glow
             ctx.shadowBlur = 10;
             ctx.shadowColor = ft.isGold ? "rgba(255, 215, 0, 0.8)" : "rgba(255, 140, 0, 0.8)";
-            
             ctx.fillStyle = ft.isGold ? "#ffd700" : "#ff8c00";
             ctx.font = "italic bold 18px 'Segoe UI'";
             ctx.textAlign = "center";
             ctx.fillText(ft.text, 0, 0);
-            
-            // White outline for readability
             ctx.strokeStyle = "white";
             ctx.lineWidth = 0.5;
             ctx.strokeText(ft.text, 0, 0);
-            
             ctx.restore();
         });
     }
