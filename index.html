@@ -11,6 +11,7 @@
             --fl-panel: #1e2225;
             --clipping: #ff4c4c;
             --vst-gold: #ffd700;
+            --neon-glow: rgba(255, 140, 0, 0.6);
         }
 
         body { margin: 0; overflow: hidden; background: #121314; font-family: 'Segoe UI', sans-serif; color: white; }
@@ -92,7 +93,7 @@
     const bgm = document.getElementById('bgm');
     
     const OBSTACLE_SPEED = 5; 
-    const MIDI_SPEED = 3; // Parallax background speed
+    const MIDI_SPEED = 3; 
     const SPAWN_INTERVAL = 1800; 
     const GATE_GAP = 185; 
 
@@ -140,6 +141,26 @@
         bgm.play().catch(e => console.log("Audio Error:", e));
     }
 
+    function addFloatingText(x, y, text, isGold = false) {
+        // Prevent Overlapping: Check if any text is already near this Y position
+        let targetY = y;
+        floatingTexts.forEach(ft => {
+            if (Math.abs(ft.y - targetY) < 25) {
+                targetY -= 30; // Push new text higher if occupied
+            }
+        });
+
+        floatingTexts.push({
+            x: x,
+            y: targetY,
+            text: text,
+            life: 1.0,
+            isGold: isGold,
+            scale: 0.5, // Start small for pop effect
+            velocity: -1.2
+        });
+    }
+
     function spawnGate() {
         const minH = 60, maxH = canvas.height - GATE_GAP - minH;
         const topH = Math.floor(Math.random() * (maxH - minH + 1)) + minH;
@@ -174,13 +195,11 @@
         if (!isWaiting) {
             let now = Date.now();
             
-            // Spawn Obstacles/VSTs
             if (!bgm.ended && now - lastSpawnTime > SPAWN_INTERVAL) {
                 spawnGate();
                 lastSpawnTime = now;
             }
 
-            // Spawn Background MIDI
             if (!bgm.ended && now - lastMidiTime > 400) {
                 spawnMidiNote();
                 lastMidiTime = now;
@@ -192,13 +211,11 @@
 
             if (player.y < 0 || player.y + player.height > canvas.height) endGame("CLIPPING ERROR");
 
-            // Update MIDI Notes (Background)
             for (let i = midiNotes.length - 1; i >= 0; i--) {
                 midiNotes[i].x -= MIDI_SPEED;
                 if (midiNotes[i].x + midiNotes[i].w < -50) midiNotes.splice(i, 1);
             }
 
-            // Update Obstacles
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 let obs = obstacles[i];
                 obs.x -= OBSTACLE_SPEED;
@@ -208,19 +225,18 @@
                 }
                 if (!obs.passed && obs.x < player.x && obs.type === 'top') {
                     obs.passed = true; score += 100; updateUI();
-                    floatingTexts.push({ x: player.x, y: player.y - 20, text: FEEDBACK_WORDS[Math.floor(Math.random() * FEEDBACK_WORDS.length)], life: 1.0 });
+                    addFloatingText(player.x, player.y - 15, FEEDBACK_WORDS[Math.floor(Math.random() * FEEDBACK_WORDS.length)], false);
                 }
                 if (obs.x + obs.w < -100) obstacles.splice(i, 1);
             }
 
-            // Update VSTs
             for (let i = coins.length - 1; i >= 0; i--) {
                 let c = coins[i];
                 c.x -= OBSTACLE_SPEED;
                 if (!c.collected && player.x < c.x + c.size && player.x + player.width > c.x &&
                     player.y < c.y + c.size && player.y + player.height > c.y) {
                     c.collected = true; score += 1000; pluginsCollected++; updateUI();
-                    floatingTexts.push({ x: player.x, y: player.y - 10, text: "VST LOADED", life: 1.0, isGold: true });
+                    addFloatingText(player.x, player.y - 15, "VST LOADED", true);
                     coins.splice(i, 1);
                 }
                 if (c.x < -100) coins.splice(i, 1);
@@ -228,8 +244,11 @@
         }
 
         for (let i = floatingTexts.length - 1; i >= 0; i--) {
-            floatingTexts[i].y -= 1; floatingTexts[i].life -= 0.02;
-            if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+            let ft = floatingTexts[i];
+            ft.y += ft.velocity;
+            ft.life -= 0.015;
+            if (ft.scale < 1.1) ft.scale += 0.1; // Pop animation
+            if (ft.life <= 0) floatingTexts.splice(i, 1);
         }
 
         draw();
@@ -239,26 +258,22 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Playlist Background Lanes
         for(let i = 0; i < 6; i++) {
             ctx.fillStyle = (i % 2 === 0) ? '#33373a' : '#2c3033';
             ctx.fillRect(0, i * 85, canvas.width, 85);
         }
 
-        // MIDI Grid lines
         ctx.strokeStyle = '#3d4144';
         let gridShift = midiOffset % 80;
         for(let i = -gridShift; i < canvas.width; i += 80) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
         }
 
-        // DRAW MIDI NOTES (Behind obstacles)
         midiNotes.forEach(m => {
             ctx.fillStyle = m.color;
             ctx.fillRect(m.x, m.y, m.w, m.h);
         });
 
-        // VST Icons
         coins.forEach(c => {
             ctx.fillStyle = "#ffd700";
             ctx.beginPath();
@@ -269,7 +284,6 @@
             ctx.fill();
         });
 
-        // Mixer Tracks
         obstacles.forEach(obs => {
             ctx.fillStyle = "#1e2225"; ctx.fillRect(obs.x + 18, obs.y, 14, obs.h);
             ctx.fillStyle = "#111"; ctx.fillRect(obs.x + 23, obs.y, 4, obs.h);
@@ -298,10 +312,28 @@
             ctx.textAlign = "left"; 
         }
 
+        // DRAW FLOATING TEXT
         floatingTexts.forEach(ft => {
-            ctx.fillStyle = ft.isGold ? `rgba(255, 215, 0, ${ft.life})` : `rgba(255, 255, 255, ${ft.life})`;
-            ctx.font = "bold 13px Arial";
-            ctx.fillText(ft.text, ft.x, ft.y);
+            ctx.save();
+            ctx.globalAlpha = ft.life;
+            ctx.translate(ft.x, ft.y);
+            ctx.scale(ft.scale, ft.scale);
+            
+            // Text shadow/glow
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = ft.isGold ? "rgba(255, 215, 0, 0.8)" : "rgba(255, 140, 0, 0.8)";
+            
+            ctx.fillStyle = ft.isGold ? "#ffd700" : "#ff8c00";
+            ctx.font = "italic bold 18px 'Segoe UI'";
+            ctx.textAlign = "center";
+            ctx.fillText(ft.text, 0, 0);
+            
+            // White outline for readability
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 0.5;
+            ctx.strokeText(ft.text, 0, 0);
+            
+            ctx.restore();
         });
     }
 
