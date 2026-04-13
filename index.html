@@ -35,10 +35,11 @@
         button:hover { background: var(--fl-orange); color: #000; }
         
         input { padding: 15px; background: #000; border: 1px solid #555; color: var(--fl-orange); text-align: center; margin-bottom: 15px; width: 80%; font-family: monospace; font-size: 18px; outline: none; border-radius: 4px; }
-        input:focus { border-color: var(--fl-orange); }
-
+        
         #leaderboard-list { list-style: none; padding: 0; color: var(--fl-orange); font-family: monospace; text-align: left; margin: 20px 0; border: 1px solid #333; background: #111; border-radius: 5px; }
         #leaderboard-list li { padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
+        
+        .promo-code { color: #fff; background: #4caf50; padding: 10px; border-radius: 4px; font-weight: bold; margin-top: 10px; display: none; border: 2px dashed #fff; }
     </style>
 </head>
 <body>
@@ -46,7 +47,7 @@
 <div id="game-container">
     <div id="menu">
         <h1>Beat Runner</h1>
-        <p style="color: #888;">COLLECT ALL VST'S FOR A SUPRISE</p>
+        <p style="color: #888;">COLLECT ALL VST'S FOR A SURPRISE</p>
         <button onclick="startGame()">OPEN PROJECT</button>
     </div>
 
@@ -63,6 +64,11 @@
             <div class="stat-box">
                 <p style="font-size: 20px; margin: 5px 0;">FINAL LUFS: <span id="finalScore">0</span></p>
                 <p style="font-size: 18px; color: var(--vst-gold); margin: 10px 0;">PLUGINS ACQUIRED: <span id="finalPlugins">0 / 0</span></p>
+                <div id="reward-box" class="promo-code">
+                    CONGRATS! You opened all the VST's!<br>
+                    Enjoy 10% Off your entire order!<br>
+                    USE CODE: <span style="font-size: 22px;">FLappy10</span>
+                </div>
             </div>
             <input type="text" id="playerName" placeholder="ENTER PRODUCER NAME..." maxlength="15">
             <br>
@@ -116,6 +122,7 @@
 
         document.getElementById('menu').style.display = 'none';
         document.getElementById('end-screen').style.display = 'none';
+        document.getElementById('reward-box').style.display = 'none';
         document.getElementById('score-submission').style.display = 'block';
         document.getElementById('leaderboard-section').style.display = 'none';
         document.getElementById('ui').style.display = 'block';
@@ -151,17 +158,20 @@
     function update() {
         if (!gameActive) return;
 
-        // CHECK FOR END OF TRACK
-        if (bgm.ended && !isWaiting) {
+        // SMART END LOGIC: Wait for music to end AND all spawned coins to clear screen
+        if (bgm.ended && !isWaiting && coins.length === 0) {
             endGame("TRACK RENDERED");
             return;
         }
 
         if (!isWaiting) {
-            let now = Date.now();
-            if (now - lastSpawnTime > SPAWN_INTERVAL) {
-                spawnGate();
-                lastSpawnTime = now;
+            // Only spawn new things if the music is still playing
+            if (!bgm.ended) {
+                let now = Date.now();
+                if (now - lastSpawnTime > SPAWN_INTERVAL) {
+                    spawnGate();
+                    lastSpawnTime = now;
+                }
             }
 
             player.dy += player.gravity;
@@ -210,20 +220,17 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Background - Playlist Lanes
         for(let i = 0; i < 6; i++) {
             ctx.fillStyle = (i % 2 === 0) ? '#33373a' : '#2c3033';
             ctx.fillRect(0, i * 85, canvas.width, 85);
         }
 
-        // MIDI Grid lines
         ctx.strokeStyle = '#3d4144';
         let gridShift = midiOffset % 80;
         for(let i = -gridShift; i < canvas.width; i += 80) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
         }
 
-        // VST Icons
         coins.forEach(c => {
             ctx.fillStyle = "#ffd700";
             ctx.beginPath();
@@ -234,7 +241,6 @@
             ctx.fill();
         });
 
-        // Mixer Tracks
         obstacles.forEach(obs => {
             ctx.fillStyle = "#1e2225"; ctx.fillRect(obs.x + 18, obs.y, 14, obs.h);
             ctx.fillStyle = "#111"; ctx.fillRect(obs.x + 23, obs.y, 4, obs.h);
@@ -243,7 +249,6 @@
             ctx.fillRect(obs.x, kY, obs.w, 22);
         });
 
-        // Character (The Orange)
         ctx.save();
         ctx.translate(player.x + 16, player.y + 18); ctx.rotate(player.dy * 0.05);
         ctx.fillStyle = "#ff8c00"; ctx.beginPath(); ctx.ellipse(0, 0, 16, 18, 0, 0, Math.PI * 2); ctx.fill();
@@ -276,24 +281,27 @@
         document.getElementById('status-message').innerText = msg;
         document.getElementById('finalScore').innerText = score;
         document.getElementById('finalPlugins').innerText = `${pluginsCollected} / ${pluginsSpawned}`;
+        
+        // CHECK FOR 100% COMPLETION
+        if (msg === "TRACK RENDERED" && pluginsCollected === pluginsSpawned && pluginsSpawned > 0) {
+            document.getElementById('reward-box').style.display = 'block';
+        }
+
         document.getElementById('end-screen').style.display = 'block';
     }
 
     function saveScore() {
         const nameInput = document.getElementById('playerName');
         const name = nameInput.value.toUpperCase() || "PRODUCER";
-        
         let board = JSON.parse(localStorage.getItem('PBP_Scores')) || [];
         board.push({ name: name, score: score });
         board.sort((a,b) => b.score - a.score);
         localStorage.setItem('PBP_Scores', JSON.stringify(board.slice(0,5)));
-        
         const list = document.getElementById('leaderboard-list');
-        list.innerHTML = board.slice(0,5).map(e => `<li><span>${e.name}</span> <span>${e.score} dB</span></li>`).join('');
-        
+        list.innerHTML = board.slice(0,5).map(e => `<li><span>${e.name}</span> <span>${e.score} LUFS</span></li>`).join('');
         document.getElementById('score-submission').style.display = 'none';
         document.getElementById('leaderboard-section').style.display = 'block';
-        nameInput.value = ""; // Clear for next time
+        nameInput.value = "";
     }
 
     function backToMenu() { 
