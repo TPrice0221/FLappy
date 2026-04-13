@@ -9,12 +9,11 @@
             --fl-orange: #ff8c00;
             --fl-bg: #2c3033;
             --fl-panel: #1e2225;
-            --fl-grid: #3d4144;
             --clipping: #ff4c4c;
             --vst-gold: #ffd700;
         }
 
-        body { margin: 0; overflow: hidden; background: #121314; font-family: 'Segoe UI', Tahoma, sans-serif; color: white; }
+        body { margin: 0; overflow: hidden; background: #121314; font-family: 'Segoe UI', sans-serif; color: white; }
         #game-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
         canvas { 
@@ -22,31 +21,33 @@
             border: 8px solid #1e2225;
             border-top: 25px solid #1e2225; 
             display: none; 
-            box-shadow: 0 30px 60px rgba(0,0,0,0.7); 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8); 
             border-radius: 4px;
         }
 
         #ui { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); font-size: 14px; display: none; background: #111; padding: 5px 20px; border-radius: 20px; border: 1px solid var(--fl-orange); color: var(--fl-orange); font-weight: bold; text-align: center; z-index: 20; }
-        #menu, #end-screen { text-align: center; z-index: 10; background: #1e2225; padding: 50px; border-radius: 12px; border: 1px solid #444; min-width: 400px; }
-        h1 { color: var(--fl-orange); text-transform: uppercase; letter-spacing: 5px; font-style: italic; margin-bottom: 10px; }
-        .controls-hint { color: #888; font-size: 12px; margin-bottom: 20px; text-transform: uppercase; }
+        #menu, #end-screen { text-align: center; z-index: 10; background: #1e2225; padding: 40px; border-radius: 12px; border: 1px solid #444; min-width: 420px; }
+        
+        h1 { color: var(--fl-orange); text-transform: uppercase; letter-spacing: 5px; font-style: italic; margin-bottom: 5px; }
         .stat-box { background: #111; padding: 20px; border-radius: 8px; margin: 15px 0; border-top: 2px solid var(--fl-orange); }
         
-        button { padding: 12px 35px; background: #3b3f43; color: white; border: 1px solid #555; border-radius: 3px; font-weight: bold; cursor: pointer; margin: 10px; text-transform: uppercase; }
+        button { padding: 12px 30px; background: #3b3f43; color: white; border: 1px solid #555; border-radius: 3px; font-weight: bold; cursor: pointer; margin: 5px; text-transform: uppercase; }
         button:hover { background: var(--fl-orange); color: #000; }
         
-        input { padding: 12px; background: #000; border: 1px solid #333; color: var(--fl-orange); text-align: center; margin-bottom: 15px; width: 200px; font-family: monospace; outline: none; }
-        #leaderboard-list { list-style: none; padding: 0; color: var(--fl-orange); font-family: monospace; text-align: left; max-width: 300px; margin: 20px auto; }
-        #leaderboard-list li { padding: 5px 0; border-bottom: 1px solid #333; }
+        input { padding: 15px; background: #000; border: 1px solid #555; color: var(--fl-orange); text-align: center; margin-bottom: 15px; width: 80%; font-family: monospace; font-size: 18px; outline: none; border-radius: 4px; }
+        input:focus { border-color: var(--fl-orange); }
+
+        #leaderboard-list { list-style: none; padding: 0; color: var(--fl-orange); font-family: monospace; text-align: left; margin: 20px 0; border: 1px solid #333; background: #111; border-radius: 5px; }
+        #leaderboard-list li { padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
     <div id="menu">
-        <h1>GAIN STAGE</h1>
-        <p class="controls-hint">Avoid the Clipping Mixer Tracks<br>Collect Plugins for Boosts</p>
-        <button onclick="startGame()">RENDER PROJECT</button>
+        <h1>Beat Runner</h1>
+        <p style="color: #888;">COLLECT ALL VST'S FOR A SUPRISE</p>
+        <button onclick="startGame()">OPEN PROJECT</button>
     </div>
 
     <div id="ui">
@@ -60,22 +61,20 @@
         
         <div id="score-submission">
             <div class="stat-box">
-                <p style="font-size: 20px; margin: 5px 0;">FINAL PEAK: <span id="finalScore">0</span></p>
+                <p style="font-size: 20px; margin: 5px 0;">FINAL LUFS: <span id="finalScore">0</span></p>
                 <p style="font-size: 18px; color: var(--vst-gold); margin: 10px 0;">PLUGINS ACQUIRED: <span id="finalPlugins">0 / 0</span></p>
             </div>
-            <input type="text" id="playerName" placeholder="PRODUCER_NAME">
+            <input type="text" id="playerName" placeholder="ENTER PRODUCER NAME..." maxlength="15">
             <br>
-            <button onclick="saveScore()">EXPORT TO CLOUD</button>
+            <button onclick="saveScore()">SAVE TO MASTER LIST</button>
         </div>
 
         <div id="leaderboard-section" style="display:none;">
             <h3>TOP PRODUCERS</h3>
             <ul id="leaderboard-list"></ul>
-            <button onclick="backToMenu()">EXIT</button>
+            <button onclick="backToMenu()">MAIN MENU</button>
+            <button onclick="startGame()" style="background: var(--fl-orange); color: black;">RE-MIX</button>
         </div>
-        
-        <br>
-        <button onclick="startGame()" style="background: var(--fl-orange); color: black;">RE-MIX</button>
     </div>
 </div>
 
@@ -113,7 +112,7 @@
         lastSpawnTime = 0; waveOffset = 0; midiOffset = 0;
         
         gameActive = true;
-        isWaiting = true; // NEW: Hold game until space is pressed
+        isWaiting = true; 
 
         document.getElementById('menu').style.display = 'none';
         document.getElementById('end-screen').style.display = 'none';
@@ -130,7 +129,7 @@
     function startAudio() {
         isWaiting = false;
         bgm.currentTime = 0;
-        bgm.play().catch(() => console.log("User interaction required for audio"));
+        bgm.play().catch(e => console.log("Audio Error:", e));
     }
 
     function spawnGate() {
@@ -152,6 +151,12 @@
     function update() {
         if (!gameActive) return;
 
+        // CHECK FOR END OF TRACK
+        if (bgm.ended && !isWaiting) {
+            endGame("TRACK RENDERED");
+            return;
+        }
+
         if (!isWaiting) {
             let now = Date.now();
             if (now - lastSpawnTime > SPAWN_INTERVAL) {
@@ -164,7 +169,7 @@
             waveOffset += OBSTACLE_SPEED;
             midiOffset += OBSTACLE_SPEED * 0.5;
 
-            if (player.y < 0 || player.y + player.height > canvas.height) endGame("CLIPPING ERROR (CRASHED)");
+            if (player.y < 0 || player.y + player.height > canvas.height) endGame("CLIPPING ERROR");
 
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 let obs = obstacles[i];
@@ -186,7 +191,7 @@
                 if (!c.collected && player.x < c.x + c.size && player.x + player.width > c.x &&
                     player.y < c.y + c.size && player.y + player.height > c.y) {
                     c.collected = true; score += 1000; pluginsCollected++; updateUI();
-                    floatingTexts.push({ x: player.x, y: player.y - 10, text: "VTS LOADED", life: 1.0, isGold: true });
+                    floatingTexts.push({ x: player.x, y: player.y - 10, text: "VST LOADED", life: 1.0, isGold: true });
                     coins.splice(i, 1);
                 }
                 if (c.x < -100) coins.splice(i, 1);
@@ -218,13 +223,6 @@
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
         }
 
-        // MIDI Blocks
-        for(let i = 0; i < 4; i++) {
-            let bX = (1000 - ((midiOffset * (0.6 + i*0.1)) % 1300));
-            ctx.fillStyle = i % 2 === 0 ? '#4caf5044' : '#2196f344';
-            ctx.fillRect(bX, 60 + (i*110), 150, 35);
-        }
-
         // VST Icons
         coins.forEach(c => {
             ctx.fillStyle = "#ffd700";
@@ -252,9 +250,8 @@
         ctx.fillStyle = "#4caf50"; ctx.beginPath(); ctx.ellipse(5, -14, 9, 4, -0.6, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
 
-        // Start Hint Overlay
         if (isWaiting) {
-            ctx.fillStyle = "rgba(0,0,0,0.6)";
+            ctx.fillStyle = "rgba(0,0,0,0.7)";
             ctx.fillRect(0,0, canvas.width, canvas.height);
             ctx.fillStyle = "#ff8c00";
             ctx.font = "bold 24px 'Segoe UI'";
@@ -263,10 +260,9 @@
             ctx.fillStyle = "white";
             ctx.font = "16px 'Segoe UI'";
             ctx.fillText("PRESS [SPACE] TO START AUTOMATION", canvas.width/2, canvas.height/2 + 20);
-            ctx.textAlign = "left"; // Reset for other text
+            ctx.textAlign = "left"; 
         }
 
-        // Text Feedback
         floatingTexts.forEach(ft => {
             ctx.fillStyle = ft.isGold ? `rgba(255, 215, 0, ${ft.life})` : `rgba(255, 255, 255, ${ft.life})`;
             ctx.font = "bold 13px Arial";
@@ -275,7 +271,8 @@
     }
 
     function endGame(msg) {
-        gameActive = false; bgm.pause();
+        gameActive = false; 
+        bgm.pause();
         document.getElementById('status-message').innerText = msg;
         document.getElementById('finalScore').innerText = score;
         document.getElementById('finalPlugins').innerText = `${pluginsCollected} / ${pluginsSpawned}`;
@@ -283,14 +280,20 @@
     }
 
     function saveScore() {
-        const name = document.getElementById('playerName').value || "PRODUCER";
-        let board = JSON.parse(localStorage.getItem('brScores')) || [];
+        const nameInput = document.getElementById('playerName');
+        const name = nameInput.value.toUpperCase() || "PRODUCER";
+        
+        let board = JSON.parse(localStorage.getItem('PBP_Scores')) || [];
         board.push({ name: name, score: score });
         board.sort((a,b) => b.score - a.score);
-        localStorage.setItem('brScores', JSON.stringify(board.slice(0,5)));
-        document.getElementById('leaderboard-list').innerHTML = board.slice(0,5).map(e => `<li>${e.name.toUpperCase()} >> ${e.score} dB</li>`).join('');
+        localStorage.setItem('PBP_Scores', JSON.stringify(board.slice(0,5)));
+        
+        const list = document.getElementById('leaderboard-list');
+        list.innerHTML = board.slice(0,5).map(e => `<li><span>${e.name}</span> <span>${e.score} dB</span></li>`).join('');
+        
         document.getElementById('score-submission').style.display = 'none';
         document.getElementById('leaderboard-section').style.display = 'block';
+        nameInput.value = ""; // Clear for next time
     }
 
     function backToMenu() { 
@@ -301,9 +304,7 @@
 
     window.addEventListener('keydown', (e) => { 
         if (e.code === 'Space') { 
-            if (isWaiting) {
-                startAudio();
-            }
+            if (isWaiting) startAudio();
             if (gameActive) {
                 player.dy = player.lift; 
                 e.preventDefault(); 
