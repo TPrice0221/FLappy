@@ -28,7 +28,8 @@
 
         #ui { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); font-size: 14px; display: none; background: #111; padding: 5px 20px; border-radius: 20px; border: 1px solid var(--fl-orange); color: var(--fl-orange); font-weight: bold; text-align: center; z-index: 20; }
         #menu, #end-screen { text-align: center; z-index: 10; background: #1e2225; padding: 50px; border-radius: 12px; border: 1px solid #444; min-width: 400px; }
-        h1 { color: var(--fl-orange); text-transform: uppercase; letter-spacing: 5px; font-style: italic; }
+        h1 { color: var(--fl-orange); text-transform: uppercase; letter-spacing: 5px; font-style: italic; margin-bottom: 10px; }
+        .controls-hint { color: #888; font-size: 12px; margin-bottom: 20px; text-transform: uppercase; }
         .stat-box { background: #111; padding: 20px; border-radius: 8px; margin: 15px 0; border-top: 2px solid var(--fl-orange); }
         
         button { padding: 12px 35px; background: #3b3f43; color: white; border: 1px solid #555; border-radius: 3px; font-weight: bold; cursor: pointer; margin: 10px; text-transform: uppercase; }
@@ -44,7 +45,7 @@
 <div id="game-container">
     <div id="menu">
         <h1>GAIN STAGE</h1>
-        <p>POWERED BY PRODUCERS v2.0.6</p>
+        <p class="controls-hint">Avoid the Clipping Mixer Tracks<br>Collect Plugins for Boosts</p>
         <button onclick="startGame()">RENDER PROJECT</button>
     </div>
 
@@ -89,7 +90,8 @@
     const SPAWN_INTERVAL = 1800; 
     const GATE_GAP = 185; 
 
-    let score = 0, gameActive = false, obstacles = [], coins = [], floatingTexts = [];
+    let score = 0, gameActive = false, isWaiting = false;
+    let obstacles = [], coins = [], floatingTexts = [];
     let pluginsSpawned = 0, pluginsCollected = 0;
     let lastSpawnTime = 0, animationId = null;
     let waveOffset = 0, midiOffset = 0;
@@ -109,7 +111,9 @@
         score = 0; obstacles = []; coins = []; floatingTexts = []; 
         pluginsSpawned = 0; pluginsCollected = 0;
         lastSpawnTime = 0; waveOffset = 0; midiOffset = 0;
+        
         gameActive = true;
+        isWaiting = true; // NEW: Hold game until space is pressed
 
         document.getElementById('menu').style.display = 'none';
         document.getElementById('end-screen').style.display = 'none';
@@ -120,11 +124,13 @@
         
         updateUI();
         initCanvas();
-
-        bgm.currentTime = 0;
-        bgm.play().catch(() => console.log("Audio Waiting for User Interaction"));
-
         update(); 
+    }
+
+    function startAudio() {
+        isWaiting = false;
+        bgm.currentTime = 0;
+        bgm.play().catch(() => console.log("User interaction required for audio"));
     }
 
     function spawnGate() {
@@ -146,43 +152,45 @@
     function update() {
         if (!gameActive) return;
 
-        let now = Date.now();
-        if (now - lastSpawnTime > SPAWN_INTERVAL) {
-            spawnGate();
-            lastSpawnTime = now;
-        }
-
-        player.dy += player.gravity;
-        player.y += player.dy;
-        waveOffset += OBSTACLE_SPEED;
-        midiOffset += OBSTACLE_SPEED * 0.5;
-
-        if (player.y < 0 || player.y + player.height > canvas.height) endGame("PROJECT CRASHED");
-
-        for (let i = obstacles.length - 1; i >= 0; i--) {
-            let obs = obstacles[i];
-            obs.x -= OBSTACLE_SPEED;
-            if (player.x + 4 < obs.x + obs.w && player.x + player.width - 4 > obs.x &&
-                player.y + 4 < obs.y + obs.h && player.y + player.height - 4 > obs.y) {
-                endGame("PROJECT CRASHED");
+        if (!isWaiting) {
+            let now = Date.now();
+            if (now - lastSpawnTime > SPAWN_INTERVAL) {
+                spawnGate();
+                lastSpawnTime = now;
             }
-            if (!obs.passed && obs.x < player.x && obs.type === 'top') {
-                obs.passed = true; score += 100; updateUI();
-                floatingTexts.push({ x: player.x, y: player.y - 20, text: FEEDBACK_WORDS[Math.floor(Math.random() * FEEDBACK_WORDS.length)], life: 1.0 });
-            }
-            if (obs.x + obs.w < -100) obstacles.splice(i, 1);
-        }
 
-        for (let i = coins.length - 1; i >= 0; i--) {
-            let c = coins[i];
-            c.x -= OBSTACLE_SPEED;
-            if (!c.collected && player.x < c.x + c.size && player.x + player.width > c.x &&
-                player.y < c.y + c.size && player.y + player.height > c.y) {
-                c.collected = true; score += 1000; pluginsCollected++; updateUI();
-                floatingTexts.push({ x: player.x, y: player.y - 10, text: "PLUG-IN OPENED", life: 1.0, isGold: true });
-                coins.splice(i, 1);
+            player.dy += player.gravity;
+            player.y += player.dy;
+            waveOffset += OBSTACLE_SPEED;
+            midiOffset += OBSTACLE_SPEED * 0.5;
+
+            if (player.y < 0 || player.y + player.height > canvas.height) endGame("CLIPPING ERROR (CRASHED)");
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.x -= OBSTACLE_SPEED;
+                if (player.x + 4 < obs.x + obs.w && player.x + player.width - 4 > obs.x &&
+                    player.y + 4 < obs.y + obs.h && player.y + player.height - 4 > obs.y) {
+                    endGame("BUFFER OVERFLOW");
+                }
+                if (!obs.passed && obs.x < player.x && obs.type === 'top') {
+                    obs.passed = true; score += 100; updateUI();
+                    floatingTexts.push({ x: player.x, y: player.y - 20, text: FEEDBACK_WORDS[Math.floor(Math.random() * FEEDBACK_WORDS.length)], life: 1.0 });
+                }
+                if (obs.x + obs.w < -100) obstacles.splice(i, 1);
             }
-            if (c.x < -100) coins.splice(i, 1);
+
+            for (let i = coins.length - 1; i >= 0; i--) {
+                let c = coins[i];
+                c.x -= OBSTACLE_SPEED;
+                if (!c.collected && player.x < c.x + c.size && player.x + player.width > c.x &&
+                    player.y < c.y + c.size && player.y + player.height > c.y) {
+                    c.collected = true; score += 1000; pluginsCollected++; updateUI();
+                    floatingTexts.push({ x: player.x, y: player.y - 10, text: "VTS LOADED", life: 1.0, isGold: true });
+                    coins.splice(i, 1);
+                }
+                if (c.x < -100) coins.splice(i, 1);
+            }
         }
 
         for (let i = floatingTexts.length - 1; i >= 0; i--) {
@@ -244,7 +252,21 @@
         ctx.fillStyle = "#4caf50"; ctx.beginPath(); ctx.ellipse(5, -14, 9, 4, -0.6, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
 
-        // Text
+        // Start Hint Overlay
+        if (isWaiting) {
+            ctx.fillStyle = "rgba(0,0,0,0.6)";
+            ctx.fillRect(0,0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ff8c00";
+            ctx.font = "bold 24px 'Segoe UI'";
+            ctx.textAlign = "center";
+            ctx.fillText("READY TO RENDER?", canvas.width/2, canvas.height/2 - 20);
+            ctx.fillStyle = "white";
+            ctx.font = "16px 'Segoe UI'";
+            ctx.fillText("PRESS [SPACE] TO START AUTOMATION", canvas.width/2, canvas.height/2 + 20);
+            ctx.textAlign = "left"; // Reset for other text
+        }
+
+        // Text Feedback
         floatingTexts.forEach(ft => {
             ctx.fillStyle = ft.isGold ? `rgba(255, 215, 0, ${ft.life})` : `rgba(255, 255, 255, ${ft.life})`;
             ctx.font = "bold 13px Arial";
@@ -277,7 +299,17 @@
         document.getElementById('menu').style.display = 'block'; 
     }
 
-    window.addEventListener('keydown', (e) => { if (e.code === 'Space') { if (gameActive) player.dy = player.lift; e.preventDefault(); } });
+    window.addEventListener('keydown', (e) => { 
+        if (e.code === 'Space') { 
+            if (isWaiting) {
+                startAudio();
+            }
+            if (gameActive) {
+                player.dy = player.lift; 
+                e.preventDefault(); 
+            }
+        } 
+    });
 </script>
 </body>
 </html>
