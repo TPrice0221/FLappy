@@ -367,14 +367,30 @@ canvas {
         canvas.style.display = 'none'; 
         document.getElementById('menu').style.display = 'block'; 
     }
+    
+            function handleInput(e) {
+    if (isWaiting) startAudio();
 
-    window.addEventListener('keydown', (e) => { 
-        if (e.code === 'Space') { 
-            if (isWaiting) startAudio();
-            if (gameActive) {
-                player.dy = player.lift; 
-                e.preventDefault(); 
-            }
+    if (gameActive) {
+        player.dy = player.lift;
+    }
+
+    if (e) e.preventDefault();
+}
+
+// Keyboard (keep spacebar)
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') handleInput(e);
+});
+
+// Mouse click
+window.addEventListener('mousedown', handleInput);
+
+// Touch (mobile)
+window.addEventListener('touchstart', handleInput);
+
+// Optional: pointer events (covers stylus, modern devices)
+window.addEventListener('pointerdown', handleInput);
         } 
     });
 </script>
