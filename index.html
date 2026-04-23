@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLappy Beat| DAW EDITION</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FLappy Beat | DAW EDITION</title>
     <style>
         :root {
             --fl-orange: #ff8c00;
@@ -14,8 +14,24 @@
             --neon-glow: rgba(255, 140, 0, 0.6);
         }
 
-        body { margin: 0; overflow: hidden; background: #121314; font-family: 'Segoe UI', sans-serif; color: white; }
-        #game-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        /* touch-action: manipulation prevents the 300ms tap delay and double-tap zoom */
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #121314; 
+            font-family: 'Segoe UI', sans-serif; 
+            color: white; 
+            touch-action: manipulation; 
+        }
+
+        #game-container { 
+            width: 100vw; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+        }
         
         canvas { 
             background: #2c3033; 
@@ -24,18 +40,15 @@
             display: none; 
             box-shadow: 0 30px 60px rgba(0,0,0,0.8); 
             border-radius: 4px;
+            max-width: 95%;
+            max-height: 80vh;
+            touch-action: none; /* Specifically lock the canvas from any browser gestures */
         }
-    
-
-canvas {
-    max-width: 100%; /* Ensures it doesn't bleed out on smaller screens */
-    height: auto;
-}
 
         #ui { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); font-size: 14px; display: none; background: #111; padding: 5px 20px; border-radius: 20px; border: 1px solid var(--fl-orange); color: var(--fl-orange); font-weight: bold; text-align: center; z-index: 20; }
-        #menu, #end-screen { text-align: center; z-index: 10; background: #1e2225; padding: 40px; border-radius: 12px; border: 1px solid #444; min-width: 420px; }
+        #menu, #end-screen { text-align: center; z-index: 10; background: #1e2225; padding: 40px; border-radius: 12px; border: 1px solid #444; min-width: 320px; max-width: 90%; }
         
-        h1 { color: var(--fl-orange); text-transform: uppercase; letter-spacing: 5px; font-style: italic; margin-bottom: 5px; }
+        h1 { color: var(--fl-orange); text-transform: uppercase; letter-spacing: 5px; font-style: italic; margin-bottom: 5px; font-size: 24px; }
         .stat-box { background: #111; padding: 20px; border-radius: 8px; margin: 15px 0; border-top: 2px solid var(--fl-orange); }
         
         button { padding: 12px 30px; background: #3b3f43; color: white; border: 1px solid #555; border-radius: 3px; font-weight: bold; cursor: pointer; margin: 5px; text-transform: uppercase; }
@@ -150,26 +163,17 @@ canvas {
     function addFloatingText(x, y, text, isGold = false) {
         let targetY = y;
         floatingTexts.forEach(ft => {
-            if (Math.abs(ft.y - targetY) < 25) {
-                targetY -= 30; 
-            }
+            if (Math.abs(ft.y - targetY) < 25) targetY -= 30; 
         });
 
         floatingTexts.push({
-            x: x,
-            y: targetY,
-            text: text,
-            life: 1.0,
-            isGold: isGold,
-            scale: 0.5, 
-            velocity: -1.2
+            x: x, y: targetY, text: text, life: 1.0, isGold: isGold, scale: 0.5, velocity: -1.2
         });
     }
 
     function spawnGate() {
         const minH = 60, maxH = canvas.height - GATE_GAP - minH;
         const topH = Math.floor(Math.random() * (maxH - minH + 1)) + minH;
-
         obstacles.push({ x: canvas.width, y: 0, w: 50, h: topH, passed: false, type: 'top' });
         obstacles.push({ x: canvas.width, y: topH + GATE_GAP, w: 50, h: canvas.height - (topH + GATE_GAP), passed: false, type: 'bottom' });
         coins.push({ x: canvas.width + 15, y: topH + (GATE_GAP/2) - 10, size: 20, collected: false });
@@ -199,12 +203,10 @@ canvas {
 
         if (!isWaiting) {
             let now = Date.now();
-            
             if (!bgm.ended && now - lastSpawnTime > SPAWN_INTERVAL) {
                 spawnGate();
                 lastSpawnTime = now;
             }
-
             if (!bgm.ended && now - lastMidiTime > 400) {
                 spawnMidiNote();
                 lastMidiTime = now;
@@ -262,23 +264,19 @@ canvas {
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
         for(let i = 0; i < 6; i++) {
             ctx.fillStyle = (i % 2 === 0) ? '#33373a' : '#2c3033';
             ctx.fillRect(0, i * 85, canvas.width, 85);
         }
-
         ctx.strokeStyle = '#3d4144';
         let gridShift = midiOffset % 80;
         for(let i = -gridShift; i < canvas.width; i += 80) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
         }
-
         midiNotes.forEach(m => {
             ctx.fillStyle = m.color;
             ctx.fillRect(m.x, m.y, m.w, m.h);
         });
-
         coins.forEach(c => {
             ctx.fillStyle = "#ffd700";
             ctx.beginPath();
@@ -288,7 +286,6 @@ canvas {
             ctx.lineTo(c.x, c.y + c.size/2);
             ctx.fill();
         });
-
         obstacles.forEach(obs => {
             ctx.fillStyle = "#1e2225"; ctx.fillRect(obs.x + 18, obs.y, 14, obs.h);
             ctx.fillStyle = "#111"; ctx.fillRect(obs.x + 23, obs.y, 4, obs.h);
@@ -327,9 +324,6 @@ canvas {
             ctx.font = "italic bold 18px 'Segoe UI'";
             ctx.textAlign = "center";
             ctx.fillText(ft.text, 0, 0);
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 0.5;
-            ctx.strokeText(ft.text, 0, 0);
             ctx.restore();
         });
     }
@@ -340,11 +334,9 @@ canvas {
         document.getElementById('status-message').innerText = msg;
         document.getElementById('finalScore').innerText = score;
         document.getElementById('finalPlugins').innerText = `${pluginsCollected} / ${pluginsSpawned}`;
-        
         if (msg === "TRACK RENDERED" && pluginsCollected === pluginsSpawned && pluginsSpawned > 0) {
             document.getElementById('reward-box').style.display = 'block';
         }
-
         document.getElementById('end-screen').style.display = 'block';
     }
 
@@ -368,29 +360,16 @@ canvas {
         document.getElementById('menu').style.display = 'block'; 
     }
     
-            function handleInput(e) {
-    if (isWaiting) startAudio();
-
-    if (gameActive) {
-        player.dy = player.lift;
+    function handleInput(e) {
+        if (isWaiting) startAudio();
+        if (gameActive) player.dy = player.lift;
+        if (e && e.cancelable) e.preventDefault();
     }
 
-    if (e) e.preventDefault();
-}
-
-// Keyboard (keep spacebar)
-window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') handleInput(e);
-});
-
-// Mouse click
-window.addEventListener('mousedown', handleInput);
-
-// Touch (mobile)
-window.addEventListener('touchstart', handleInput);
-
-// Pointer (covers most modern devices)
-window.addEventListener('pointerdown', handleInput);
+    window.addEventListener('keydown', (e) => { if (e.code === 'Space') handleInput(e); });
+    window.addEventListener('mousedown', handleInput);
+    window.addEventListener('touchstart', handleInput, { passive: false });
+    window.addEventListener('pointerdown', handleInput);
 </script>
 </body>
 </html>
