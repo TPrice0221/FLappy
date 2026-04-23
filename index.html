@@ -131,7 +131,22 @@
         player.y = canvas.height / 2;
         player.dy = 0;
     }
+function resetViewport() {
+    // 1. Force the scroll position to the top-left
+    window.scrollTo(0, 0);
 
+    // 2. Temporarily "unlock" the meta tag to force a snap-back, then lock it
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+        // We set it to a standard scale first to force the browser to recalculate
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
+        
+        // Use a tiny timeout to let the browser process the snap before locking it
+        setTimeout(() => {
+            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+        }, 10);
+    }
+}
     function startGame() {
         if (animationId) cancelAnimationFrame(animationId);
         score = 0; obstacles = []; coins = []; floatingTexts = []; midiNotes = [];
