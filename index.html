@@ -361,15 +361,41 @@
     }
     
     function handleInput(e) {
-        if (isWaiting) startAudio();
-        if (gameActive) player.dy = player.lift;
-        if (e && e.cancelable) e.preventDefault();
+        // This ensures the audio starts on the very first interaction
+        if (isWaiting) {
+            startAudio();
+        }
+
+        if (gameActive) {
+            player.dy = player.lift;
+        }
+
+        // Only prevent default if it's a touch event to stop the zooming/scrolling
+        // but let the event finish so the game logic registers it
+        if (e && e.type === 'touchstart' && e.cancelable) {
+            e.preventDefault();
+        }
     }
 
-    window.addEventListener('keydown', (e) => { if (e.code === 'Space') handleInput(e); });
-    window.addEventListener('mousedown', handleInput);
-    window.addEventListener('touchstart', handleInput, { passive: false });
-    window.addEventListener('pointerdown', handleInput);
+    // Modern "Pointer" events cover Mouse, Pen, and Touch in one go
+    window.addEventListener('pointerdown', (e) => {
+        // Left click or touch only
+        if (e.button === 0 || e.pointerType === 'touch') {
+            handleInput(e);
+        }
+    });
+
+    // Spacebar support for desktop testing
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            handleInput(e);
+        }
+    });
+
+    // Final safety to kill the "bounce" scroll on iOS
+    window.addEventListener('touchmove', (e) => {
+        if (gameActive && e.cancelable) e.preventDefault();
+    }, { passive: false });
 </script>
 </body>
 </html>
